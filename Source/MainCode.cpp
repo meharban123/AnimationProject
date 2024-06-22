@@ -1,319 +1,269 @@
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 #include "linmath.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <conio.h>
 #include <iostream>
 #include <vector>
-#include <windows.h>
-#include <time.h>
+#include <memory>
+#include <ctime>
+#include <sqlite3.h>
 
 using namespace std;
 
 const float DEG2RAD = 3.14159 / 180;
 
-void processInput(GLFWwindow* window);
+// SQLite database
+sqlite3* db;
 
-enum BRICKTYPE { REFLECTIVE, DESTRUCTABLE };
-enum ONOFF { ON, OFF };
+// Function to initialize the SQLite database
+void initDatabase() {
+    if (sqlite3_open("game.db", &db)) {
+        cerr << "Can't open database: " << sqlite3_errmsg(db) << endl;
+        exit(1);
+    }
+    const char* createTableSQL = "CREATE TABLE IF NOT EXISTS userScores (userName TEXT PRIMARY KEY, score INTEGER);";
+    char* errMsg = nullptr;
+    if (sqlite3_exec(db, createTableSQL, 0, 0, &errMsg) != SQLITE_OK) {
+        cerr << "SQL error: " << errMsg << endl;
+        sqlite3_free(errMsg);
+        exit(1);
+    }
+}
 
-class Brick
-{
+// Function to add or update a user score
+void upsertUserScore(const string& userName, int score) {
+    const char* upsertSQL = "INSERT INTO userScores (userName, score) VALUES (?1, ?2) "
+                            "ON CONFLICT(userName) DO UPDATE SET score = excluded.score;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, upsertSQL, -1, &stmt, 0) != SQLITE_OK) {
+        cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << endl;
+        exit(1);
+    }
+    sqlite3_bind_text(stmt, 1, userName.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, score);
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        cerr << "Execution failed: " << sqlite3_errmsg(db) << endl;
+    }
+    sqlite3_finalize(stmt);
+}
+
+// Function to get a user score
+int getUserScore(const string& userName) {
+    const char* selectSQL = "SELECT score FROM userScores WHERE userName = ?1;";
+    sqlite3_stmt* stmt;
+    int score = 0;
+    if (sqlite3_prepare_v2(db, selectSQL, -1, &stmt, 0) != SQLITE_OK) {
+        cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << endl;
+        exit(1);
+    }
+    sqlite3_bind_text(stmt, 1, userName.c_str(), -1, SQLITE_STATIC);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        score = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return score;
+}
+
+// Class representing a Brick in the game
+class Brick {
 public:
     float red, green, blue;
-    float x, y, width;
-    BRICKTYPE brick_type;
-    ONOFF onoff;
+    float x, y, width, height;
+    enum BRICKTYPE { REFLECTIVE, DESTRUCTABLE } brick_type;
+    enum ONOFF { ON, OFF } onoff;
 
-    Brick(BRICKTYPE bt, float xx, float yy, float ww, float rr, float gg, float bb)
-    {
-        brick_type = bt; x = xx; y = yy, width = ww; red = rr, green = gg, blue = bb;
-        onoff = ON;
-    };
+    Brick(BRICKTYPE bt, float xx, float yy, float ww, float hh, float rr, float gg, float bb)
+        : brick_type(bt), x(xx), y(yy), width(ww), height(hh), red(rr), green(gg), blue(bb), onoff(ON) {}
 
-    void drawBrick()
-    {
-        if (onoff == ON)
-        {
-            double halfside = width / 2;
-
+    void drawBrick() {
+        if (onoff == ON) {
             glColor3d(red, green, blue);
             glBegin(GL_POLYGON);
-
-            glVertex2d(x + halfside, y + halfside);
-            glVertex2d(x + halfside, y - halfside);
-            glVertex2d(x - halfside, y - halfside);
-            glVertex2d(x - halfside, y + halfside);
-
+            glVertex2d(x + width / 2, y + height / 2);
+            glVertex2d(x + width / 2, y - height / 2);
+            glVertex2d(x - width / 2, y - height / 2);
+            glVertex2d(x - width / 2, y + height / 2);
             glEnd();
         }
     }
 
-    //added this function to change color when hit
-    void ChangeColor(float r, float g, float b)
-    {
-        red = r;
-        green = g;
-        blue = b;
+    bool checkCollision(float ballX, float ballY, float ballRadius) {
+        if (onoff == OFF) return false;
+        return ballX + ballRadius > x - width / 2 &&
+               ballX - ballRadius < x + width / 2 &&
+               ballY + ballRadius > y - height / 2 &&
+               ballY - ballRadius < y + height / 2;
     }
 };
 
-class Paddle : public Brick //added this class to make the paddle at the bottom
-{
-public:
-    Paddle(float xx, float yy, float ww, float rr, float gg, float bb)
-        : Brick(REFLECTIVE, xx, yy, ww, rr, gg, bb) {} //create paddle as a type of white brick
-    //movmeent
-    void moveLeft()
-    {
-        if (x > -1 + width)
-            x -= 0.05;
-    }
-
-    void moveRight()
-    {
-        if (x < 1 - width)
-            x += 0.05;
-    }
-};
-
-class Circle
-{
+// Class representing a Circle (Ball)
+class Circle {
 public:
     float red, green, blue;
-    float radius;
-    float x;
-    float y;
-    float speed = 0.06;
-    int direction; // 1=up 2=right 3=down 4=left 5=up right 6=up left 7=down right 8=down left
+    float x, y, radius;
+    float speedX, speedY;
 
-    Circle(double xx, double yy, double rr, int dir, float rad, float r, float g, float b)
-    {
-        x = xx;
-        y = yy;
-        radius = rr;
-        red = r;
-        green = g;
-        blue = b;
-        radius = rad;
-        direction = dir;
-    }
-    //altered code to use ChangeColor to alter bick on collision
+    Circle(float xx, float yy, float rr, float rr1, float gg, float bb)
+        : x(xx), y(yy), radius(rr), red(rr1), green(gg), blue(bb), speedX(0.01f), speedY(0.01f) {}
 
-    void CheckCollision(Brick* brk)
-    {
-        if (brk->brick_type == REFLECTIVE)
-        {
-            if ((x > brk->x - brk->width && x <= brk->x + brk->width) && (y > brk->y - brk->width && y <= brk->y + brk->width))
-            {
-                direction = GetRandomDirection();
-                x = x + 0.03;
-                y = y + 0.04;
-
-                // Change the color of the brick on collision
-                float r = static_cast<float>(rand()) / RAND_MAX;//random color when hit
-                float g = static_cast<float>(rand()) / RAND_MAX;
-                float b = static_cast<float>(rand()) / RAND_MAX;
-                brk->ChangeColor(r, g, b);
-            }
-        }
-        else if (brk->brick_type == DESTRUCTABLE)
-        {
-            if ((x > brk->x - brk->width && x <= brk->x + brk->width) && (y > brk->y - brk->width && y <= brk->y + brk->width))
-            {
-                brk->onoff = OFF;
-
-                // Change the color of the brick on collision
-                float r = static_cast<float>(rand()) / RAND_MAX;//had to use static_case because I was getting a int error
-                float g = static_cast<float>(rand()) / RAND_MAX;
-                float b = static_cast<float>(rand()) / RAND_MAX;
-                brk->ChangeColor(r, g, b);
-            }
-        }
-    }
-
-    void CheckCircleCollision(Circle* other)
-    {
-        float dx = x - other->x;
-        float dy = y - other->y;
-        float distance = sqrt(dx * dx + dy * dy);
-
-        if (distance <= radius + other->radius)
-        {
-            // Change the color of the colliding circles
-            red = static_cast<float>(rand()) / RAND_MAX;
-            green = static_cast<float>(rand()) / RAND_MAX;
-            blue = static_cast<float>(rand()) / RAND_MAX;
-
-            other->red = static_cast<float>(rand()) / RAND_MAX;
-            other->green = static_cast<float>(rand()) / RAND_MAX;
-            other->blue = static_cast<float>(rand()) / RAND_MAX;
-        }
-    }
-    int GetRandomDirection()
-    {
-        return (rand() % 8) + 1;
-    }
-
-    void MoveOneStep() //added to this function to make the circles speed up when they hit the walls
-    {
-        if (direction == 1 || direction == 5 || direction == 6)  // up
-        {
-            if (y > -1 + radius)
-            {
-                y -= speed; //decrease
-            }
-            else
-            {
-                direction = GetRandomDirection();
-                speed = (rand() % 6 + 1) * 0.01;// change speed
-            }
-        }
-
-        if (direction == 2 || direction == 5 || direction == 7)  // right
-        {
-            if (x < 1 - radius)
-            {
-                x += speed;
-            }
-            else
-            {
-                direction = GetRandomDirection();
-                speed = (rand() % 6 + 1) * 0.01;
-            }
-        }
-
-        if (direction == 3 || direction == 7 || direction == 8)  // down
-        {
-            if (y < 1 - radius) {
-                y += speed;
-            }
-            else
-            {
-                direction = GetRandomDirection();
-                speed = (rand() % 6 + 1) * 0.01;// change speed randomly
-            }
-        }
-
-        if (direction == 4 || direction == 6 || direction == 8)  // left
-        {
-            if (x > -1 + radius) {
-                x -= speed;
-            }
-            else
-            {
-                direction = GetRandomDirection();
-                speed = (rand() % 6 + 1) * 0.01;
-            }
-        }
-    }
-
-    void DrawCircle()
-    {
-        glColor3f(red, green, blue);
-        glBegin(GL_POLYGON);
-        for (int i = 0; i < 360; i++) {
+    void drawCircle() {
+        glColor3d(red, green, blue);
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex2d(x, y);
+        for (int i = 0; i <= 360; i++) {
             float degInRad = i * DEG2RAD;
-            glVertex2f((cos(degInRad) * radius) + x, (sin(degInRad) * radius) + y);
+            glVertex2d(x + cos(degInRad) * radius, y + sin(degInRad) * radius);
         }
         glEnd();
     }
+
+    void move() {
+        x += speedX;
+        y += speedY;
+
+        if (x + radius > 1.0f || x - radius < -1.0f) {
+            speedX = -speedX;
+        }
+        if (y + radius > 1.0f || y - radius < -1.0f) {
+            speedY = -speedY;
+        }
+    }
 };
 
+// Class representing a Paddle
+class Paddle {
+public:
+    float red, green, blue;
+    float x, y, width, height;
 
+    Paddle(float xx, float yy, float ww, float hh, float rr, float gg, float bb)
+        : x(xx), y(yy), width(ww), height(hh), red(rr), green(gg), blue(bb) {}
 
-vector<Circle> world;
-
-void processInput(GLFWwindow* window, Paddle& paddle) //added the paddle here
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-    {
-        double r, g, b;
-        r = rand() / 10000.0;
-        g = rand() / 10000.0;
-        b = rand() / 10000.0;
-        Circle B(0, 0, 02, 2, 0.05, r, g, b);
-        world.push_back(B);
+    void drawBrick() {
+        glColor3d(red, green, blue);
+        glBegin(GL_POLYGON);
+        glVertex2d(x + width / 2, y + height / 2);
+        glVertex2d(x + width / 2, y - height / 2);
+        glVertex2d(x - width / 2, y - height / 2);
+        glVertex2d(x - width / 2, y + height / 2);
+        glEnd();
     }
-    //add paddle movement
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        paddle.moveLeft();
+    bool checkCollision(float ballX, float ballY, float ballRadius) {
+        return ballX + ballRadius > x - width / 2 &&
+               ballX - ballRadius < x + width / 2 &&
+               ballY + ballRadius > y - height / 2 &&
+               ballY - ballRadius < y + height / 2;
+    }
+};
 
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        paddle.moveRight();
-}
-
-int main(void) {
-    srand(time(NULL));
-
+// Function to initialize the game
+GLFWwindow* initGame() {
     if (!glfwInit()) {
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Failed to initialize GLFW");
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    GLFWwindow* window = glfwCreateWindow(480, 480, "8-2 Assignment", NULL, NULL);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Brick Breaker", NULL, NULL);
     if (!window) {
         glfwTerminate();
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Failed to create GLFW window");
     }
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
 
-    Paddle paddle(0, -0.8, 0.2, 1, 1, 1);//add paddle
-    Brick brick1(REFLECTIVE, 0, 0.6, 0.2, 1, 1, 0); //change colors and positons
-    Brick brick2(DESTRUCTABLE, -0.3, 0.4, 0.2, 0, 1, 0);
-    Brick brick3(DESTRUCTABLE, 0.3, 0.4, 0.2, 0, 1, 1);
-    Brick brick4(REFLECTIVE, -0.6, 0.2, 0.2, 1, 0.5, 0.5);
-    Brick brick5(REFLECTIVE, 0.6, 0.2, 0.2, 1, 0.5, 0.5);
+    glfwMakeContextCurrent(window);
+    return window;
+}
+
+// Function to process input
+void processInput(GLFWwindow* window, unique_ptr<Paddle>& paddle) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        paddle->x -= 0.05f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        paddle->x += 0.05f;
+    }
+}
+
+// Function to create bricks
+vector<unique_ptr<Brick>> createBricks() {
+    vector<unique_ptr<Brick>> bricks;
+    float startX = -0.8f;
+    float startY = 0.8f;
+    float brickWidth = 0.2f;
+    float brickHeight = 0.1f;
+    int rows = 5;
+    int cols = 8;
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            float x = startX + j * brickWidth;
+            float y = startY - i * brickHeight;
+            bricks.push_back(make_unique<Brick>(Brick::DESTRUCTABLE, x, y, brickWidth, brickHeight, 0.0f, 1.0f, 0.0f));
+        }
+    }
+
+    return bricks;
+}
+
+// Main function
+int main(void) {
+    srand(time(0));
+    GLFWwindow* window = nullptr;
+
+    initDatabase();
+
+    try {
+        window = initGame();
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }
+
+    auto paddle = make_unique<Paddle>(0.0f, -0.9f, 0.2f, 0.05f, 1.0f, 1.0f, 1.0f);
+    auto ball = make_unique<Circle>(0.0f, -0.8f, 0.05f, 1.0f, 0.0f, 0.0f);
+
+    vector<unique_ptr<Brick>> bricks = createBricks();
+
+    std::string userName = "Player1";
+    upsertUserScore(userName, 0);
 
     while (!glfwWindowShouldClose(window)) {
-        //Setup View
-        float ratio;
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float)height;
-        glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
 
         processInput(window, paddle);
 
-        //Movement
-        for (int i = 0; i < world.size(); i++)
-        {
-            world[i].CheckCollision(&paddle);
-            world[i].CheckCollision(&brick1);
-            world[i].CheckCollision(&brick2);
-            world[i].CheckCollision(&brick3);
-            world[i].CheckCollision(&brick4);
-            world[i].CheckCollision(&brick5);
-            world[i].MoveOneStep();
-            world[i].DrawCircle();
+        ball->move();
+
+        if (paddle->checkCollision(ball->x, ball->y, ball->radius)) {
+            ball->speedY = -ball->speedY;
+            ball->y = paddle->y + paddle->height / 2 + ball->radius;
         }
-        //added this to check the circles and change their colors
-        for (int i = 0; i < world.size(); i++)
-        {
-            for (int j = i + 1; j < world.size(); j++)
-            {
-                world[i].CheckCircleCollision(&world[j]);
+
+        for (auto& brick : bricks) {
+            if (brick->checkCollision(ball->x, ball->y, ball->radius)) {
+                brick->onoff = Brick::OFF;
+                ball->speedY = -ball->speedY;
+                ball->y += ball->speedY;
+
+                int currentScore = getUserScore(userName);
+                upsertUserScore(userName, currentScore + 10);
+                break;
             }
         }
 
-        paddle.drawBrick();
-        brick1.drawBrick();
-        brick2.drawBrick();
-        brick3.drawBrick();
-        brick4.drawBrick();
-        brick5.drawBrick();
+        paddle->drawBrick();
+        ball->drawCircle();
+        for (auto& brick : bricks) {
+            brick->drawBrick();
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glfwDestroyWindow(window);
+    std::cout << "Final Score for " << userName << ": " << getUserScore(userName) << std::endl;
+
     glfwTerminate();
-    exit(EXIT_SUCCESS);
+    sqlite3_close(db);
+    return 0;
 }
