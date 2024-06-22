@@ -45,7 +45,7 @@ main {
     min-height: 80vh;
 }
 
-main section {
+section {
     background-color: white;
     padding: 2em;
     margin: 1em 0;
@@ -59,18 +59,4 @@ footer {
     text-align: center;
     padding: 1em 0;
     margin-top: 2em;
-}
-
-.video-container {
-    text-align: center;
-    margin: 2em 0;
-}
-
-iframe {
-    width: 100%;
-    max-width: 560px;
-    display: block;
-    margin: 0 auto;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
