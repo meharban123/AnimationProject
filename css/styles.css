@@ -41,6 +41,10 @@ nav ul li a {
     padding: 2em 0;
 }
 
+main {
+    min-height: 80vh;
+}
+
 main section {
     background-color: white;
     padding: 2em;
@@ -54,14 +58,7 @@ footer {
     color: white;
     text-align: center;
     padding: 1em 0;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
-}
-
-footer .container {
-    width: 80%;
-    margin: 0 auto;
+    margin-top: 2em;
 }
 
 .video-container {
@@ -69,7 +66,7 @@ footer .container {
     margin: 2em 0;
 }
 
-video, iframe {
+iframe {
     width: 100%;
     max-width: 560px;
     display: block;
