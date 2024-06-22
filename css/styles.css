@@ -63,9 +63,14 @@ footer .container {
     margin: 0 auto;
 }
 
-video {
+.video-container {
+    text-align: center;
+    margin: 2em 0;
+}
+
+video, iframe {
     width: 100%;
-    max-width: 600px;
+    max-width: 560px;
     display: block;
     margin: 0 auto;
     border-radius: 8px;
