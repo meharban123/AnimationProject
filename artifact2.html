@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artifact 2: Algorithms and Data Structures</title>
+    <title>Artifact 2: Data Structures and Algorithms</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>Artifact 2: Algorithms and Data Structures</h1>
+            <h1>Artifact 2: Data Structures and Algorithms</h1>
             <nav>
                 <ul>
                     <li><a href="index.html">Home</a></li>
@@ -22,29 +22,33 @@
     <main class="container">
         <section>
             <h2>Brief Description</h2>
-            <p>Describe the artifact...</p>
-        </section>
-        <section>
+            <p>The artifact I selected for my ePortfolio includes the enhancements made to the Breakout game project that I initially began work on during my CS 330 course last term. These enhancements include the implementation of efficient collision detection, adjustment of ball speed, the addition of a scoring system using a <code>std::map</code>, the integration of smart pointers for better memory management, and the inclusion of a player database for managing scores. These changes were made to improve the game's functionality, performance, and maintainability.</p>
+
             <h2>Justification</h2>
-            <p>Justify its inclusion...</p>
-        </section>
-        <section>
+            <p>I picked these enhancements because they effectively showcase my skills in software development, particularly in algorithms, data structures, and databases. The collision detection mechanism ensures the ball interacts correctly with the paddle and bricks, reversing direction appropriately upon impact. The use of a <code>std::map</code> to manage player scores demonstrates my ability to utilize data structures for tracking and updating game state. I chose <code>std::map</code> because it allows for efficient handling of key-value pairs, making it easy to quickly retrieve and update player scores. This was crucial for managing dynamic game data in real-time. Additionally, integrating smart pointers ensures efficient memory management, preventing memory leaks and safely handling dynamic memory. Including a player database for managing scores also contributes to the databases portion of the project, showcasing my ability to handle persistent data storage and retrieval efficiently.</p>
+
+            <h2>Course Objectives</h2>
+            <p>Yes, I believe I met the course objectives planned for this enhancement. The improvements demonstrate my proficiency in implementing algorithms, managing data structures, and handling databases, which are key course outcomes. Specifically, the enhancements align with the goals of applying efficient algorithms for game mechanics, using data structures to manage game state, and implementing database solutions for persistent data management. At this point, I do not have any updates to my outcome-coverage plans. The enhancements are progressing as planned, and the artifact effectively demonstrates the intended skills and knowledge.</p>
+
             <h2>Reflection</h2>
-            <p>Reflect on the process...</p>
-        </section>
-        <section>
+            <p>This milestone was especially challenging since it involved tinkering with math and using trial and error to fix some portions of my algorithms and also implementing a data structure that I do not have much proficiency with. These changes proved to be much more difficult to implement than I initially thought. Enhancing and modifying the Breakout game was a valuable learning experience however. I gained a deeper understanding of collision detection algorithms and how to refine them for better accuracy and performance. Implementing the scoring system using <code>std::map</code> improved my ability to manage and update game state efficiently. Additionally, working with smart pointers reinforced the importance of proper memory management in C++. Including a player database added another layer of complexity, as it required efficient data storage and retrieval mechanisms.</p>
+            <p>During the implementation, I encountered several issues typical for beginners. Initially, the ball would get stuck in corners or behave unpredictably during collisions because the collision logic wasn't correctly updating the ball's position after a collision. For example, after hitting the edge of a brick, the ball sometimes continued in the same direction instead of bouncing back. To address this, I adjusted the <code>checkCollision</code> function within the <code>Brick</code> and <code>Paddle</code> classes to ensure the ball's position was corrected after each collision, preventing it from getting stuck. Adding checks to determine which side of the brick or paddle the ball had collided with and adjusting its trajectory accordingly involved a lot of trial and error to get the collision responses right.</p>
+            <p>Finding the right balance for the ball's speed was also challenging. The ball was initially too fast for easy gameplay, so I adjusted the speed variables in the <code>Circle</code> class constructor. However, this change introduced a new problem: the ball sometimes moved too slowly, making the game a little too easy. Finding the right balance required multiple adjustments and playtesting. I eventually settled on speeds that provided a good mix of challenge and playability, but not before several iterations of tweaking the values and observing the gameplay effects. Another issue that occurred when I changed the speeds was it would offset all my collision algorithms and cause the ball to just bounce back and forth diagonally. I had to again adjust the angles and random direction variables to account for this.</p>
+            <p>Implementing the score management system posed its own set of challenges. Initially, I had trouble correctly updating and retrieving scores using the <code>std::map</code> structure. Ensuring that the keys (player names) and values (scores) were handled correctly required debugging to verify that scores were consistently and correctly updated during gameplay. Issues such as scores not updating or resetting unexpectedly were traced back to errors in how the map was accessed and modified.</p>
+            <p>Refactoring the main game loop to use functions like <code>processInput</code>, <code>createBricks</code>, and managing game objects with smart pointers (<code>unique_ptr</code>) was crucial for maintainability. Initially, integrating smart pointers was challenging because I had to ensure proper memory management without introducing bugs. Converting raw pointers to smart pointers required careful attention to the ownership and lifetime of objects. Overcoming these challenges taught me the importance of memory management in C++ and helped me write more robust code. Adding comments to explain the purpose and functionality of each section was also essential, especially when revisiting the code after some time or when other developers need to understand it.</p>
+            <p>These enhancements improved the Breakout game by making it more user-friendly, visually appealing, and technically sound. They demonstrate my ability to apply fundamental programming concepts and algorithms in a practical project, showcasing my skills in software development, problem-solving, and efficient code management. The troubleshooting steps, including addressing collision issues, balancing game difficulty, managing data structures, and ensuring memory management, were crucial in ensuring the game's functionality and reliability. By overcoming these challenges, I gained a deeper understanding of game development and programming best practices.</p>
+
             <h2>Development Stages</h2>
-            <p>Download each stage of development:</p>
             <ul>
-                <li><a href="zips/stage1.zip" download>Stage 1</a></li>
-                <li><a href="zips/stage2.zip" download>Stage 2</a></li>
-                <li><a href="zips/stage3.zip" download>Stage 3</a></li>
+                
+                <li><a href="downloads/artifact2_stage2.zip">Stage 2</a></li>
+                
             </ul>
         </section>
     </main>
     <footer>
         <div class="container">
-            <p>&copy; 2024 Your Name</p>
+            <p>&copy; 2024 Meharban Singh</p>
         </div>
     </footer>
     <script src="js/script.js"></script>

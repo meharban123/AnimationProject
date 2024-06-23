@@ -22,29 +22,32 @@
     <main class="container">
         <section>
             <h2>Brief Description</h2>
-            <p>Describe the artifact...</p>
-        </section>
-        <section>
+            <p>The artifact I selected is my Breakout game. This project was developed as my final assignment for the CS 330 Graphics Programming course in Spring 2024.</p>
+
             <h2>Justification</h2>
-            <p>Justify its inclusion...</p>
-        </section>
-        <section>
+            <p>I chose this artifact to showcase my skills in database management and software integration. It demonstrates my ability to design and implement an SQLite database and integrate it with a C++ application. The improvements include database creation, data insertion, updating, retrieval operations, and optimizing these interactions within the application. The purpose of these improvements was to create a database that housed all of the scores of the players.</p>
+
+            <h2>Course Objectives</h2>
+            <p>Yes, I believe I met the course objectives. I aimed to better understand database integration with software applications. Integrating SQLite with my C++ game application to view user high scores met this objective. The code that was written to interact with the database as well that is included in the MainCode.cpp files also accomplishes basic CRUD operations.</p>
+
             <h2>Reflection</h2>
-            <p>Reflect on the process...</p>
-        </section>
-        <section>
+            <p>At first, I started by trying to use Socket.IO and Node.js for socket communication to enable real-time data exchange between the C++ application and a web client. Setting up the Node.js server to handle socket communication involved learning how to use Socket.IO for real-time bidirectional event-based communication. However, integrating Socket.IO with the C++ application proved to be complex. I encountered issues such as managing asynchronous events and ensuring data consistency between the server and client. Errors included version mismatches between the Socket.IO client and server libraries, and issues with the Node.js environment setup, such as missing dependencies or incorrect configurations in the package.json file. Debugging the socket communication was difficult due to the asynchronous nature of JavaScript and the need to handle multiple events simultaneously. This complexity led to persistent issues that consumed significant time and effort, ultimately leading me to scrap the socket communication aspect.</p>
+            <p>Additionally, I faced challenges with OpenSSL errors. These occurred because socket required OpenSSL for secure communications, but there were mismatches in the version and missing dependencies. This led to errors such as unresolved symbols related to OpenSSL functions. Resolving these issues required ensuring that the correct OpenSSL libraries were installed and properly linked in the project settings. The OpenSSL errors added another layer of complexity, which contributed to the decision to move away from the socket communication approach.</p>
+            <p>I then switched over to using SQLite and incorporated the userScores map as part of the high score database. This allowed for a more straightforward and reliable way to manage user scores within the application. By integrating SQLite, I created a user database that could store and retrieve scores efficiently. This change simplified the process and improved the performance of the application. The project was initially set up to look for the SQLite files in a prelinked Utilities folder, but I had placed the sqlite3.h and sqlite3.c files in another directory. This mismatch caused the compiler to fail in locating and linking the necessary SQLite3 library files correctly, resulting in errors such as unresolved external symbols like _sqlite3_errmsg, _sqlite3_prepare_v2, _sqlite3_bind_int, and others. Correcting these issues required properly configuring the include directories and ensuring that the project settings pointed to the right locations.</p>
+            <p>Incorporating the getUserScore and updateUserScore functions into the game's logic was another significant part of the enhancement. I modified the game logic to update and retrieve user scores from the SQLite database. This included integrating the user score retrieval within the checkCollision function. Whenever a collision occurred between the ball and the bricks, the game would update the user's score in the database using updateUserScore. This integration ensured that the scores were consistently tracked and updated.</p>
+            <p>Debugging and testing the integrated application also presented significant difficulties. I had to ensure that the database operations were efficient and did not slow down the application. Optimizing SQL queries was crucial to maintain performance. I faced issues like query optimization to avoid slowing down the game, managing the data flow between the database and the application, and ensuring the application's responsiveness. Another problem was making sure that the game logic correctly interacted with the database functions without causing delays or crashes. These challenges forced me to carefully analyze and refine the integration points between the game's collision detection and the database update mechanisms. Despite these challenges, working through them provided valuable experience in handling complex integrations and troubleshooting.</p>
+            <p>Overall, this artifact highlights my practical skills in database management and software development, demonstrating my ability to integrate different technologies, resolve complex issues, and improve the functionality and performance of an application.</p>
+
             <h2>Development Stages</h2>
-            <p>Download each stage of development:</p>
             <ul>
-                <li><a href="zips/stage1.zip" download>Stage 1</a></li>
-                <li><a href="zips/stage2.zip" download>Stage 2</a></li>
-                <li><a href="zips/stage3.zip" download>Stage 3</a></li>
+                
+                <li><a href="downloads/artifact3_stage3.zip">Stage 3</a></li>
             </ul>
         </section>
     </main>
     <footer>
         <div class="container">
-            <p>&copy; 2024 Your Name</p>
+            <p>&copy; 2024 Meharban Singh</p>
         </div>
     </footer>
     <script src="js/script.js"></script>
